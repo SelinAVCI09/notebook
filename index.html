@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bizim Hikayemiz</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Daktilo Fontu (Google Fonts) -->
+    <link href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div class="book-container">
+        <div id="book" class="book">
+            
+            <!-- Spiral (Telli) Yapısı -->
+            <div class="spiral-binding"></div>
+
+            <!-- Ön Kapak -->
+            <div class="paper">
+                <div class="front">
+                    <div id="f1" class="front-content cover-design" data-bg-color="{{ data.settings.cover_color }}">
+                        <h1 style="white-space: pre-line;">{{ data.settings.cover_title }}</h1>
+                        <p>{{ data.settings.cover_subtitle }}</p>
+                        <small>(Açmak için tıkla)</small>
+                    </div>
+                </div>
+                <div class="back">
+                  
+                </div>
+            </div>
+
+            <!-- Dinamik Sayfalar (Admin Panelinden Eklenenler) -->
+            {% for page in data.pages %}
+            <div class="paper">
+                <!-- Ön Yüz -->
+                <div class="front {{ page.page_style }}" data-bg-color="{{ page.paper_color }}">
+                    <div class="front-content">
+                        {% if page.page_date %}
+                            <div class="date-stamp">{{ page.page_date }}</div>
+                        {% endif %}
+                        {% for item in page.front_content %}
+                            <div class="absolute-item" data-left="{{ item.left }}" data-top="{{ item.top }}" data-width="{{ item.width }}" data-font-size="{{ item.fontSize }}">
+                            {% if item.type == 'text' %}
+                                <p class="typewriter dynamic-color" data-color="{{ item.color }}" style="margin: 0;">{{ item.content }}</p>
+                            {% elif item.type == 'image' %}
+                                <div class="polaroid" style="margin:0;"><img src="/uploads/{{ item.content }}"></div>
+                            {% elif item.type == 'video' %}
+                                <div class="polaroid" style="margin:0;"><video src="/uploads/{{ item.content }}#t=0.1" controls preload="metadata"></video></div>
+                            {% elif item.type == 'sticker' %}
+                                <div class="sticker" style="margin:0;">{{ item.content }}</div>
+                            {% elif item.type == 'custom_stamp' %}
+                                <div class="custom-stamp {{ item.shape }} dynamic-stamp" data-color="{{ item.color }}" style="margin:0;">{{ item.content }}</div>
+                            {% elif item.type == 'scratch_card' %}
+                                <div class="scratch-card-container" style="width:100%; height:100px;">
+                                    <div class="scratch-hidden-content">{{ item.content }}</div>
+                                    <canvas class="scratch-canvas"></canvas>
+                                </div>
+                            {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <!-- Arka Yüz -->
+                <div class="back {{ page.page_style }}" data-bg-color="{{ page.paper_color }}">
+                    <div class="back-content">
+                        {% for item in page.back_content %}
+                            <div class="absolute-item" data-left="{{ item.left }}" data-top="{{ item.top }}" data-width="{{ item.width }}" data-font-size="{{ item.fontSize }}">
+                            {% if item.type == 'text' %}
+                                <p class="typewriter dynamic-color" data-color="{{ item.color }}" style="margin: 0;">{{ item.content }}</p>
+                            {% elif item.type == 'image' %}
+                                <div class="polaroid" style="margin:0;"><img src="/uploads/{{ item.content }}"></div>
+                            {% elif item.type == 'video' %}
+                                <div class="polaroid" style="margin:0;"><video src="/uploads/{{ item.content }}#t=0.1" controls preload="metadata"></video></div>
+                            {% elif item.type == 'sticker' %}
+                                <div class="sticker" style="margin:0;">{{ item.content }}</div>
+                            {% elif item.type == 'custom_stamp' %}
+                                <div class="custom-stamp {{ item.shape }} dynamic-stamp" data-color="{{ item.color }}" style="margin:0;">{{ item.content }}</div>
+                            {% elif item.type == 'scratch_card' %}
+                                <div class="scratch-card-container" style="width:100%; height:100px;">
+                                    <div class="scratch-hidden-content">{{ item.content }}</div>
+                                    <canvas class="scratch-canvas"></canvas>
+                                </div>
+                            {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+
+            <!-- Arka Kapak -->
+            <div class="paper">
+                <div class="front">
+                    
+                </div>
+                <div class="back">
+                    <div id="b4" class="back-content cover-design" data-bg-color="{{ data.settings.cover_color }}">
+                        <h1>{{ data.settings.back_cover_text }}</h1>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Müzik Çalar (Varsa) -->
+    {% if data.settings.background_music %}
+    <div class="music-player">
+        <p>🎵 Bizim Şarkımız</p>
+        <audio controls loop src="/uploads/{{ data.settings.background_music }}"></audio>
+    </div>
+    {% endif %}
+
+    <!-- Sayfa Çevirme Butonları -->
+    <div class="controls">
+        <button id="prev-btn">Önceki Sayfa</button>
+        <button id="next-btn">Sonraki Sayfa</button>
+    </div>
+
+    <!-- Admin Paneline Geçiş Linki -->
+    <div style="position: fixed; bottom: 10px; right: 10px; opacity: 0.7;">
+        <a href="/admin" style="text-decoration: none; color: #d81b60; font-weight: bold; font-size: 14px;">⚙️ Düzenle</a>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

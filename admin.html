@@ -1,0 +1,620 @@
+    <link href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap" rel="stylesheet">
+    <!-- İkonlar için FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f0f2f5; padding: 20px; color: #333; display: flex; flex-direction: column; height: 100vh; margin: 0; }
+        
+        /* Üst Bar */
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .top-bar h1 { color: #d81b60; margin: 0; font-family: 'Special Elite', cursive; }
+        .back-link { text-decoration: none; color: #333; font-weight: bold; }
+
+        /* Ana Editör Alanı */
+        .editor-container { display: flex; gap: 20px; flex: 1; overflow: hidden; }
+
+        /* Sol Panel: Araçlar */
+        .sidebar { width: 300px; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow-y: auto; display: flex; flex-direction: column; gap: 20px; }
+        
+        .tool-group h3 { margin-top: 0; color: #555; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; }
+        
+        .tool-btn { 
+            display: flex; align-items: center; gap: 10px; 
+            width: 100%; padding: 12px; border: 2px solid #eee; 
+            background: #fff; border-radius: 8px; cursor: pointer; 
+            transition: 0.2s; font-weight: 500; color: #444; margin-bottom: 10px;
+        }
+        .tool-btn:hover { border-color: #ff8fa3; background: #fff0f5; color: #d81b60; }
+        .tool-btn i { font-size: 1.2rem; }
+
+        /* Orta Panel: Önizleme */
+        .preview-area { flex: 1; background: #e0e0e0; border-radius: 10px; display: flex; justify-content: center; align-items: center; position: relative; overflow: hidden; }
+        
+        .book-page-preview {
+            width: 350px; height: 500px;
+            background-color: #fffbf0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            position: relative;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex; flex-direction: column; align-items: center; gap: 15px;
+            font-family: 'Special Elite', cursive;
+            transition: background-color 0.3s;
+        }
+
+        /* Editördeki Elemanlar */
+        .preview-item { 
+            position: absolute; /* Serbest dolaşım için absolute */
+            border: 1px dashed transparent; 
+            cursor: pointer;
+            user-select: none; /* Sürüklerken metin seçilmesin */
+        }
+        .preview-item:hover { border-color: #ccc; }
+        .preview-item img, .preview-item video { width: 100%; border-radius: 4px; box-shadow: 2px 2px 5px rgba(0,0,0,0.1); }
+        .preview-item p { margin: 0; text-align: center; white-space: pre-wrap; }
+        
+        .delete-item-btn {
+            position: absolute; top: -10px; right: -10px;
+            background: red; color: white; border-radius: 50%;
+            width: 20px; height: 20px; text-align: center; line-height: 20px;
+            font-size: 12px; cursor: pointer; display: none; z-index: 5;
+        }
+        
+        .preview-item:hover .delete-item-btn { display: block; }
+        
+        /* Önizleme alanında taşmayı engelle */
+        .book-page-preview { overflow: hidden; }
+
+        /* Sağ Panel: Sayfa Listesi */
+        .page-list-panel { width: 250px; background: white; padding: 20px; border-radius: 10px; overflow-y: auto; }
+        .page-item { background: #f9f9f9; border-bottom: 1px solid #eee; padding: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .edit-btn { background: none; border: none; color: #2196F3; cursor: pointer; margin-right: 5px; }
+        .delete-btn { background: none; border: none; color: #ff5252; cursor: pointer; }
+
+        /* Toggle Switch (Ön/Arka Yüz) */
+        .side-toggle { display: flex; background: #ddd; border-radius: 20px; padding: 5px; margin-bottom: 10px; }
+        .side-btn { flex: 1; border: none; background: none; padding: 8px; border-radius: 15px; cursor: pointer; font-weight: bold; }
+        .side-btn.active { background: white; color: #d81b60; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+
+        .save-btn { background-color: #d81b60; color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; font-size: 1.1rem; cursor: pointer; margin-top: auto; }
+        .save-btn:hover { background-color: #b0164e; }
+        .new-page-btn { background-color: #4CAF50; color: white; border: none; padding: 10px; width: 100%; border-radius: 8px; margin-bottom: 10px; cursor: pointer; display: none; }
+
+        input[type="color"] { width: 100%; height: 40px; border: none; cursor: pointer; }
+        select { width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; margin-top: 5px; font-family: inherit; }
+        input[type="text"], textarea { width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px; font-family: inherit; margin-bottom: 10px; }
+        label { display: block; margin-top: 10px; font-weight: bold; font-size: 0.9rem; color: #555; }
+
+        /* Sticker Grid */
+        .sticker-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; margin-top: 10px; }
+        .sticker-btn { font-size: 1.5rem; cursor: pointer; background: none; border: 1px solid transparent; border-radius: 5px; }
+        .sticker-btn:hover { background: #fff0f5; border-color: #ff8fa3; transform: scale(1.2); }
+
+        /* --- SAYFA STİLLERİ (Önizleme İçin) --- */
+        /* Çizgili Sayfa */
+        .page-style-lined {
+            background-image: repeating-linear-gradient(transparent, transparent 29px, rgba(0,0,0,0.1) 30px);
+            background-size: 100% 30px;
+        }
+
+        /* Noktalı Sayfa */
+        .page-style-dotted {
+            background-image: radial-gradient(rgba(0,0,0,0.2) 1.5px, transparent 1.5px);
+            background-size: 20px 20px;
+        }
+
+        /* Vintage (Eskitme) Sayfa */
+        .page-style-vintage {
+            box-shadow: inset 0 0 80px rgba(139, 69, 19, 0.15) !important;
+        }
+
+        /* Yanık Kenar Efekti */
+        .page-style-burnt {
+            box-shadow: inset 0 0 30px 10px rgba(139, 69, 19, 0.6) !important;
+            border: 1px dashed rgba(90, 45, 12, 0.3);
+        }
+
+        /* --- DAMGA STİLLERİ (Önizleme İçin) --- */
+        .custom-stamp {
+            display: inline-flex; align-items: center; justify-content: center;
+            font-weight: bold; text-transform: uppercase; opacity: 0.85;
+            transform: rotate(-5deg); margin: 10px;
+            font-family: 'Courier New', Courier, monospace;
+            border: 3px solid currentColor;
+            box-shadow: 2px 2px 0px rgba(0,0,0,0.1);
+            text-align: center; line-height: 1.2;
+        }
+        .stamp-circle {
+            border-radius: 50%; width: 120px; height: 120px;
+            padding: 15px; font-size: 0.85rem;
+        }
+        .stamp-rectangle {
+            border-radius: 8px; padding: 10px 20px; min-width: 80px;
+        }
+
+        /* Kazı Kazan Önizleme (Admin) */
+        .scratch-preview {
+            background: #C0C0C0; /* Gümüş rengi */
+            color: #555;
+            display: flex; align-items: center; justify-content: center;
+            border: 1px solid #999;
+        }
+    </style>
+</head>
+<body>
+    <div id="loadingOverlay" class="loading-overlay hidden">
+        <div><i class="fas fa-spinner fa-spin"></i> Yükleniyor...</div>
+    </div>
+
+    <div class="top-bar">
+        <a href="/" class="back-link"><i class="fas fa-arrow-left"></i> Kitaba Dön</a>
+        <h1>Anı Defteri Tasarımcısı</h1>
+        <a href="/" target="_blank" class="back-link" style="color:#d81b60;"><i class="fas fa-eye"></i> Canlı Önizle</a>
+    </div>
+
+    <div class="editor-container">
+        <!-- SOL PANEL: ARAÇLAR -->
+        <div class="sidebar">
+            <div class="tool-group">
+                <h3>Sayfa Ayarları</h3>
+                <label>Kağıt Rengi:</label>
+                <input type="color" id="paperColorPicker" value="#fffbf0">
+                
+                <label style="margin-top:15px;">Tarih:</label>
+                <input type="date" id="pageDatePicker" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+
+                <label style="margin-top:15px;">Sayfa Stili:</label>
+                <select id="pageStyleSelect" onchange="updatePageStyle()">
+                    <option value="">Düz (Sade)</option>
+                    <option value="page-style-lined">Çizgili Defter</option>
+                    <option value="page-style-dotted">Noktalı Defter</option>
+                    <option value="page-style-vintage">Vintage (Eskitme)</option>
+                    <option value="page-style-burnt">Yanık Kenarlar</option>
+                </select>
+            </div>
+
+            <div class="tool-group">
+                <h3>İçerik Ekle</h3>
+                
+                <label>Yazı Rengi:</label>
+                <input type="color" id="textColorPicker" value="#4a4a4a" style="height:30px; margin-bottom:10px;">
+
+                <button class="tool-btn" onclick="addText()"><i class="fas fa-font"></i> Yazı Ekle</button>
+                <button class="tool-btn" onclick="document.getElementById('imgInput').click()"><i class="fas fa-image"></i> Fotoğraf Ekle</button>
+                <button class="tool-btn" onclick="document.getElementById('vidInput').click()"><i class="fas fa-video"></i> Video Ekle</button>
+                <button class="tool-btn" onclick="addScratchCard()"><i class="fas fa-eraser"></i> Kazı Kazan Ekle</button>
+                
+                <div style="border-top: 1px dashed #ccc; margin-top: 15px; padding-top: 15px;">
+                    <label>Damga Oluştur:</label>
+                    <input type="text" id="stampText" placeholder="Damga Yazısı (Örn: ONAYLANDI)" maxlength="15">
+                    <select id="stampShape" style="margin-bottom: 5px;">
+                        <option value="stamp-circle">Yuvarlak</option>
+                        <option value="stamp-rectangle">Dikdörtgen</option>
+                    </select>
+                    <input type="color" id="stampColor" value="#d81b60" style="height:30px;">
+                    <button class="tool-btn" onclick="addCustomStamp()" style="margin-top:5px; background:#fff0f5; color:#d81b60; border-color:#d81b60;">Damga Vur</button>
+                </div>
+
+                <div style="margin-top: 15px;">
+                    <label>Tatlı Çıkartmalar:</label>
+                    <div class="sticker-grid">
+                        <!-- Emojiler JS ile doldurulacak veya buraya manuel yazılabilir -->
+                        <button class="sticker-btn" onclick="addSticker('❤️')">❤️</button>
+                        <button class="sticker-btn" onclick="addSticker('⭐')">⭐</button>
+                        <button class="sticker-btn" onclick="addSticker('🌸')">🌸</button>
+                        <button class="sticker-btn" onclick="addSticker('🎀')">🎀</button>
+                        <button class="sticker-btn" onclick="addSticker('✨')">✨</button>
+                        <button class="sticker-btn" onclick="addSticker('🦋')">🦋</button>
+                        <button class="sticker-btn" onclick="addSticker('💌')">💌</button>
+                        <button class="sticker-btn" onclick="addSticker('🧸')">🧸</button>
+                        <button class="sticker-btn" onclick="addSticker('🎉')">🎉</button>
+                        <button class="sticker-btn" onclick="addSticker('💋')">💋</button>
+                        <!-- Yeni Emojiler -->
+                        <button class="sticker-btn" onclick="addSticker('🌞')">🌞</button>
+                        <button class="sticker-btn" onclick="addSticker('🌙')">🌙</button>
+                        <button class="sticker-btn" onclick="addSticker('☁️')">☁️</button>
+                        <button class="sticker-btn" onclick="addSticker('🍕')">🍕</button>
+                        <button class="sticker-btn" onclick="addSticker('🍦')">🍦</button>
+                        <button class="sticker-btn" onclick="addSticker('✈️')">✈️</button>
+                        <button class="sticker-btn" onclick="addSticker('📷')">📷</button>
+                        <button class="sticker-btn" onclick="addSticker('🐶')">🐶</button>
+                        <button class="sticker-btn" onclick="addSticker('🐱')">🐱</button>
+                        <button class="sticker-btn" onclick="addSticker('💍')">💍</button>
+                    </div>
+                </div>
+
+                <!-- Gizli Dosya Inputları -->
+                <input type="file" id="imgInput" accept="image/*" style="display:none" onchange="uploadFile(this, 'image')">
+                <input type="file" id="vidInput" accept="video/*" style="display:none" onchange="uploadFile(this, 'video')">
+            </div>
+
+            <div class="tool-group">
+                <h3>Kapak & Ayarlar</h3>
+                <form action="/update_settings" method="POST" enctype="multipart/form-data">
+                    <label>Kapak Rengi:</label>
+                    <input type="color" name="cover_color" value="{{ data.settings.cover_color }}" onchange="this.form.submit()">
+                    
+                    <label>Kapak Başlığı:</label>
+                    <input type="text" name="cover_title" value="{{ data.settings.cover_title }}">
+                    
+                    <label>Alt Başlık:</label>
+                    <input type="text" name="cover_subtitle" value="{{ data.settings.cover_subtitle }}">
+
+                    <label>Arka Kapak Yazısı:</label>
+                    <input type="text" name="back_cover_text" value="{{ data.settings.back_cover_text }}">
+                    
+                    <label>Arka Plan Müziği:</label>
+                    <input type="file" name="background_music" accept="audio/*">
+                    {% if data.settings.background_music %}
+                        <small style="color:green;">Mevcut Müzik: {{ data.settings.background_music }}</small>
+                        <audio controls src="/uploads/{{ data.settings.background_music }}" style="width:100%; margin-top:5px; height:30px;"></audio>
+                    {% endif %}
+                    
+                    <button type="submit" class="tool-btn" style="margin-top:10px; justify-content:center;">Ayarları Kaydet</button>
+                </form>
+            </div>
+
+            <button id="newPageBtn" class="new-page-btn" onclick="resetEditor()"><i class="fas fa-plus"></i> Yeni Sayfa Oluştur</button>
+            <button id="saveBtn" class="save-btn" onclick="savePage()"><i class="fas fa-save"></i> Sayfayı Kaydet</button>
+        </div>
+
+        <!-- ORTA PANEL: ÖNİZLEME -->
+        <div class="preview-area">
+            <div style="position: absolute; top: 20px; z-index: 10;">
+                <div class="side-toggle">
+                    <button class="side-btn active" id="btnFront" onclick="switchSide('front')">Ön Yüz</button>
+                    <button class="side-btn" id="btnBack" onclick="switchSide('back')">Arka Yüz</button>
+                </div>
+            </div>
+
+            <!-- Ön Yüz Canvas -->
+            <div id="frontCanvas" class="book-page-preview">
+                <div style="color:#ccc; font-size:0.8rem;">(Ön Yüz - İçerik ekleyin)</div>
+            </div>
+
+            <!-- Arka Yüz Canvas (Gizli Başlar) -->
+            <div id="backCanvas" class="book-page-preview" style="display:none;">
+                <div style="color:#ccc; font-size:0.8rem;">(Arka Yüz - İçerik ekleyin)</div>
+            </div>
+        </div>
+
+        <!-- SAĞ PANEL: LİSTE -->
+        <div class="page-list-panel">
+            <h3>Sayfalar</h3>
+            {% for page in data.pages %}
+            <div class="page-item">
+                <span>Sayfa {{ loop.index }}</span>
+                <form action="/delete_page/{{ loop.index0 }}" method="POST" style="margin:0;">
+                    <button type="button" class="edit-btn" data-index="{{ loop.index0 }}" onclick="loadPageFromIndex(this.dataset.index)"><i class="fas fa-edit"></i></button>
+                    <button class="delete-btn"><i class="fas fa-trash"></i></button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Veriyi HTML attribute üzerinden güvenli şekilde JS'e aktar (Editör hatasını önler) -->
+    <div id="page-data-store" data-pages="{{ data.pages | tojson | forceescape }}" style="display:none;"></div>
+
+    <script>
+        const pageDataStore = document.getElementById('page-data-store');
+        const allPages = JSON.parse(pageDataStore.dataset.pages);
+        let currentSide = 'front';
+        let editingIndex = null; // Şu an düzenlenen sayfanın indexi (null ise yeni sayfa)
+        
+        // Kağıt Rengi Değişimi
+        document.getElementById('paperColorPicker').addEventListener('input', (e) => {
+            document.getElementById('frontCanvas').style.backgroundColor = e.target.value;
+            document.getElementById('backCanvas').style.backgroundColor = e.target.value;
+        });
+
+        // Sayfa Stili Değişimi
+        function updatePageStyle() {
+            const style = document.getElementById('pageStyleSelect').value;
+            const front = document.getElementById('frontCanvas');
+            const back = document.getElementById('backCanvas');
+            
+            // Eski stilleri temizle
+            front.className = 'book-page-preview ' + style;
+            back.className = 'book-page-preview ' + style;
+            
+            if(style === 'page-style-burnt') { /* Yanık kenar için ek ayar gerekirse buraya */ }
+        }
+
+        function switchSide(side) {
+            currentSide = side;
+            document.getElementById('btnFront').className = side === 'front' ? 'side-btn active' : 'side-btn';
+            document.getElementById('btnBack').className = side === 'back' ? 'side-btn active' : 'side-btn';
+            document.getElementById('frontCanvas').style.display = side === 'front' ? 'flex' : 'none';
+            document.getElementById('backCanvas').style.display = side === 'back' ? 'flex' : 'none';
+        }
+
+        function createItemHTML(type, content, extraData = {}) {
+            const div = document.createElement('div');
+            div.className = 'preview-item';
+            div.dataset.type = type;
+            div.dataset.content = content;
+            if(extraData.color) div.dataset.color = extraData.color;
+            if(extraData.shape) div.dataset.shape = extraData.shape;
+            
+            // Konum ve Boyut (Varsa uygula, yoksa varsayılan)
+            div.style.left = extraData.left || '50px'; // Varsayılan değer
+            div.style.top = extraData.top || '50px';   // Varsayılan değer
+            if(extraData.width) div.style.width = extraData.width;
+            if(extraData.fontSize) div.style.fontSize = extraData.fontSize;
+
+            let innerHTML = `
+                <div class="delete-item-btn" onclick="this.parentElement.remove()">X</div>
+                <div class="resize-handle"></div>
+                <div class="move-handle"><i class="fas fa-arrows-alt"></i></div>
+            `;
+            
+            if (type === 'text') {
+                // Yazı boyutu dış div'den kontrol edilecek
+                innerHTML += `<p contenteditable="true" style="outline:none; border-bottom:1px dashed #ccc; color:${extraData.color || '#000'}; width:100%;">${content}</p>`;
+            } else if (type === 'image') {
+                innerHTML += `<img src="/uploads/${content}">`;
+            } else if (type === 'video') {
+                innerHTML += `<video src="/uploads/${content}#t=0.1" controls preload="metadata" style="width:100%;"></video>`;
+            } else if (type === 'sticker') {
+                // Sticker boyutu font-size ile kontrol edilecek, varsayılan 3rem
+                div.style.fontSize = extraData.fontSize || '3rem';
+                innerHTML += `<div style="text-align:center;">${content}</div>`;
+            } else if (type === 'custom_stamp') {
+                // Damga boyutu font-size ile kontrol edilecek
+                div.style.fontSize = extraData.fontSize || '1rem';
+                innerHTML += `<div class="custom-stamp ${extraData.shape}" style="color:${extraData.color}; border-color:${extraData.color}; margin:0;">${content}</div>`;
+            } else if (type === 'scratch_card') {
+                // Kazı kazan admin önizlemesi
+                div.style.width = extraData.width || '200px';
+                div.style.height = extraData.height || '100px'; // Yükseklik de önemli
+                innerHTML += `<div class="scratch-preview" style="width:100%; height:100%;">GİZLİ: ${content}</div>`;
+            }
+            div.innerHTML = innerHTML;
+            
+            // Sürükleme ve Boyutlandırma Özelliklerini Başlat
+            makeDraggable(div);
+            makeResizable(div, type);
+            
+            return div;
+        }
+
+        // --- SÜRÜKLEME MANTIĞI ---
+        function makeDraggable(elmnt) {
+            let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+            
+            elmnt.onmousedown = dragMouseDown;
+
+            function dragMouseDown(e) {
+                // Sadece move-handle'a veya resim/video gibi içeriklere tıklayınca sürükle
+                // Yazı alanına (contenteditable) tıklayınca sürüklemeyi engelle
+                if (e.target.getAttribute('contenteditable') === 'true' || e.target.classList.contains('resize-handle')) return;
+                
+                // Eğer bir move-handle varsa ve ona tıklanmadıysa (ve bu bir yazıysa), sürüklemeyi engelle ki yazı seçilebilsin
+                if (elmnt.dataset.type === 'text' && !e.target.classList.contains('move-handle') && !e.target.closest('.move-handle')) {
+                    return;
+                }
+                
+                e = e || window.event;
+                e.preventDefault();
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                document.onmouseup = closeDragElement;
+                document.onmousemove = elementDrag;
+            }
+
+            function elementDrag(e) {
+                e = e || window.event;
+                e.preventDefault();
+                pos1 = pos3 - e.clientX;
+                pos2 = pos4 - e.clientY;
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
+                elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+            }
+
+            function closeDragElement() {
+                document.onmouseup = null;
+                document.onmousemove = null;
+            }
+        }
+
+        // --- BOYUTLANDIRMA MANTIĞI ---
+        function makeResizable(elmnt, type) {
+            const resizer = elmnt.querySelector('.resize-handle');
+            if (!resizer) return;
+
+            resizer.addEventListener('mousedown', function(e) {
+                e.preventDefault();
+                window.addEventListener('mousemove', resize);
+                window.addEventListener('mouseup', stopResize);
+            });
+
+            function resize(e) {
+                // Mouse'un öğenin sol üst köşesine olan mesafesi
+                const width = e.clientX - elmnt.getBoundingClientRect().left;
+                
+                if (type === 'image' || type === 'video' || type === 'scratch_card') {
+                    // Resim ve videolarda genişliği değiştir
+                    if (width > 50) elmnt.style.width = width + 'px';
+                } else {
+                    // Yazı, Sticker ve Damgalarda font boyutunu değiştir
+                    // Genişliğe bağlı bir oranla font size hesapla (basit bir yaklaşım)
+                    const newSize = Math.max(10, width / 3); 
+                    elmnt.style.fontSize = newSize + 'px';
+                }
+            }
+
+            function stopResize() {
+                window.removeEventListener('mousemove', resize);
+                window.removeEventListener('mouseup', stopResize);
+            }
+        }
+
+        function addText() {
+            const text = prompt("Yazınızı girin:", "Buraya yaz...");
+            const color = document.getElementById('textColorPicker').value;
+            if (text) {
+                const canvas = document.getElementById(currentSide + 'Canvas');
+                // Varsayılan konum orta
+                canvas.appendChild(createItemHTML('text', text, { color: color, top: '200px', left: '100px' }));
+            }
+        }
+
+        function addScratchCard() {
+            const text = prompt("Gizli mesajı girin:", "Seni Seviyorum");
+            if (text) {
+                const canvas = document.getElementById(currentSide + 'Canvas');
+                canvas.appendChild(createItemHTML('scratch_card', text, { top: '150px', left: '80px', width: '200px' }));
+            }
+        }
+
+        function addCustomStamp() {
+            const text = document.getElementById('stampText').value;
+            const shape = document.getElementById('stampShape').value;
+            const color = document.getElementById('stampColor').value;
+
+            if (!text) return alert("Lütfen damga yazısı girin!");
+            const canvas = document.getElementById(currentSide + 'Canvas');
+            canvas.appendChild(createItemHTML('custom_stamp', text, { shape: shape, color: color }));
+        }
+
+        function addSticker(emoji) {
+            const canvas = document.getElementById(currentSide + 'Canvas');
+            canvas.appendChild(createItemHTML('sticker', emoji));
+        }
+
+        function uploadFile(input, type) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                // 100MB Boyut Kontrolü
+                if (file.size > 100 * 1024 * 1024) {
+                    alert("Dosya çok büyük! Lütfen 100MB'dan küçük bir dosya seçin.");
+                    input.value = '';
+                    return;
+                }
+
+                document.getElementById('loadingOverlay').classList.remove('hidden'); // Yükleniyor göster
+                
+                const formData = new FormData();
+                formData.append('file', file);
+
+                fetch('/upload_media', { method: 'POST', body: formData })
+                .then(response => {
+                    if (!response.ok) throw new Error("Yükleme başarısız (Dosya çok büyük olabilir)");
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.filename) {
+                        const canvas = document.getElementById(currentSide + 'Canvas');
+                        // Varsayılan konum ile ekle
+                        canvas.appendChild(createItemHTML(type, data.filename, { left: '50px', top: '50px' }));
+                    }
+                })
+                .catch(err => alert("Hata: " + err.message))
+                .finally(() => {
+                    document.getElementById('loadingOverlay').classList.add('hidden'); // Yükleniyor gizle
+                    input.value = ''; // Inputu temizle
+                });
+            }
+        }
+
+        function loadPageFromIndex(index) {
+            loadPage(index, allPages[index]);
+        }
+
+        function loadPage(index, pageData) {
+            editingIndex = index;
+            
+            // Editör başlığını ve butonunu güncelle
+            document.getElementById('saveBtn').innerHTML = '<i class="fas fa-save"></i> Değişiklikleri Güncelle';
+            document.getElementById('newPageBtn').style.display = 'block';
+            
+            // Renk
+            document.getElementById('paperColorPicker').value = pageData.paper_color;
+            document.getElementById('frontCanvas').style.backgroundColor = pageData.paper_color;
+            document.getElementById('backCanvas').style.backgroundColor = pageData.paper_color;
+
+            // Tarih
+            document.getElementById('pageDatePicker').value = pageData.page_date || '';
+            
+            // Stil
+            document.getElementById('pageStyleSelect').value = pageData.page_style || '';
+            updatePageStyle();
+
+            // İçerikleri Temizle
+            document.getElementById('frontCanvas').innerHTML = '<div style="color:#ccc; font-size:0.8rem;">(Ön Yüz)</div>';
+            document.getElementById('backCanvas').innerHTML = '<div style="color:#ccc; font-size:0.8rem;">(Arka Yüz)</div>';
+
+            // İçerikleri Yükle
+            pageData.front_content.forEach(item => {
+                document.getElementById('frontCanvas').appendChild(createItemHTML(item.type, item.content, item));
+            });
+            pageData.back_content.forEach(item => {
+                document.getElementById('backCanvas').appendChild(createItemHTML(item.type, item.content, item));
+            });
+            
+            // Ön yüze geç
+            switchSide('front');
+        }
+
+        function resetEditor() {
+            editingIndex = null;
+            window.location.reload(); // En temizi sayfayı yenilemek
+        }
+
+        function savePage() {
+            // Arka yüzü geçici olarak görünür yap (Veri okuma garantisi için)
+            const backCanvas = document.getElementById('backCanvas');
+            const wasHidden = backCanvas.style.display === 'none';
+            if (wasHidden) backCanvas.style.display = 'flex';
+
+            const getItems = (canvasId) => {
+                const items = [];
+                document.getElementById(canvasId).querySelectorAll('.preview-item').forEach(el => {
+                    let content = el.dataset.content;
+                    // Eğer text ise güncel içeriği al (contenteditable olduğu için)
+                    if (el.dataset.type === 'text') {
+                        content = el.querySelector('p').textContent;
+                    }
+                    
+                    let itemObj = { type: el.dataset.type, content: content };
+                    if (el.dataset.color) itemObj.color = el.dataset.color;
+                    if (el.dataset.shape) itemObj.shape = el.dataset.shape;
+                    
+                    // Konum ve Boyut Bilgilerini Kaydet
+                    itemObj.left = el.style.left;
+                    itemObj.top = el.style.top;
+                    itemObj.width = el.style.width;
+                    itemObj.height = el.style.height; // Yükseklik de lazım olabilir
+                    itemObj.fontSize = el.style.fontSize;
+                    
+                    items.push(itemObj);
+                });
+                return items;
+            };
+
+            const payload = {
+                front_content: getItems('frontCanvas'),
+                back_content: getItems('backCanvas'),
+                paper_color: document.getElementById('paperColorPicker').value,
+                page_date: document.getElementById('pageDatePicker').value,
+                page_style: document.getElementById('pageStyleSelect').value,
+                page_index: editingIndex
+            };
+
+            // Arka yüzü eski haline getir
+            if (wasHidden) backCanvas.style.display = 'none';
+
+            fetch('/save_page', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).then(res => {
+                if(res.ok) window.location.reload();
+                else alert("Hata oluştu");
+            });
+        }
+    </script>
+</body>
+</html>
